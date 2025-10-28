@@ -1,0 +1,16 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# Node / web (por si usamos tooling)
+node_modules/
+
+# Docker
+infra/.env
+backups/
+
+# Editor
+.vscode/
+.idea/
