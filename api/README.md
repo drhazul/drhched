@@ -1,98 +1,219 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="http://nestjs.com/" target="blank">
+    <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
+  </a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# 🚀 DRH-CHED API — Deploy Docker (Producción LAN)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+API desarrollada en **NestJS + Prisma + PostgreSQL**, lista para ejecutarse en **entornos de red local (LAN)** mediante **Docker Compose**.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📦 Requisitos Previos
 
-## Project setup
+### 🧰 En tu servidor Ubuntu (Producción LAN)
+Asegúrate de tener instalado:
 
 ```bash
-$ pnpm install
-```
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl wget unzip
+🐋 Instalar Docker y Docker Compose
+bash
 
-## Compile and run the project
+sudo apt install -y ca-certificates curl gnupg lsb-release
 
-```bash
-# development
-$ pnpm run start
+# Repositorio Docker oficial
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# watch mode
-$ pnpm run start:dev
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# production mode
-$ pnpm run start:prod
-```
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+Verifica instalación:
 
-## Run tests
+bash
 
-```bash
-# unit tests
-$ pnpm run test
+docker --version
+docker compose version
+👤 Crear usuario deploy y configurar permisos SSH
+Crear usuario:
 
-# e2e tests
-$ pnpm run test:e2e
+bash
 
-# test coverage
-$ pnpm run test:cov
-```
+sudo adduser deploy
+Darle permisos para Docker:
 
-## Deployment
+bash
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+sudo usermod -aG docker deploy
+Permitir acceso SSH:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+bash
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+sudo mkdir -p /home/deploy/.ssh
+sudo chmod 700 /home/deploy/.ssh
+sudo chown deploy:deploy /home/deploy/.ssh
+Desde tu PC local, copia tu clave pública:
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+bash
 
-## Resources
+ssh-copy-id deploy@192.168.200.212
+Verifica acceso:
 
-Check out a few resources that may come in handy when working with NestJS:
+bash
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+ssh deploy@192.168.200.212
+🔐 Configuración de GitHub (acceso al repositorio)
+1. Crear token personal en GitHub
+En tu cuenta →
+Settings > Developer Settings > Personal Access Tokens > Tokens (classic)
+Crear un token con permisos:
 
-## Support
+repo
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+read:packages
 
-## Stay in touch
+workflow
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+2. Guardar el token en el servidor
+En el servidor, configura Git globalmente para usar el token:
 
-## License
+bash
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+git config --global user.name "deploy"
+git config --global user.email "deploy@local"
+git config --global credential.helper store
+Luego clona usando el token:
+
+bash
+
+git clone https://<TOKEN>@github.com/TU_USUARIO/TU_REPOSITORIO.git
+💡 Ejemplo:
+
+bash
+
+git clone https://ghp_a1b2c3d4e5f6g7h8i9j0@github.com/ioe-labs/drhched_api.git
+🧱 Estructura de proyecto en servidor
+bash
+
+/home/deploy/drhched_api/
+│
+├── docker-compose.yml
+├── .env
+└── prisma/
+    └── schema.prisma
+⚙️ Variables de entorno (.env de producción)
+Ejemplo básico:
+
+env
+
+DATABASE_URL="postgresql://postgres:postgres@postgres:5432/drhched_prod?schema=public"
+PORT=3000
+JWT_SECRET=supersecretkey
+🐳 Docker Compose — API + PostgreSQL
+Ejemplo de docker-compose.yml:
+
+yaml
+
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15
+    container_name: drhched_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: drhched_prod
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - drhched_net
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    container_name: drhched_api
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/drhched_prod?schema=public
+      - PORT=3000
+      - JWT_SECRET=supersecretkey
+    ports:
+      - "3000:3000"
+    networks:
+      - drhched_net
+
+networks:
+  drhched_net:
+    driver: bridge
+🔄 Despliegue y migración de base de datos
+Desde la carpeta del proyecto:
+
+bash
+
+docker compose up -d --build
+Una vez los contenedores estén arriba, ejecuta la migración:
+
+bash
+
+docker exec -it drhched_api npx prisma migrate deploy
+Verifica logs:
+
+bash
+
+docker compose logs -f
+🌐 Prueba desde la LAN
+Desde otra PC de la red:
+
+bash
+
+curl http://192.168.200.212:3000/api
+O abre en navegador:
+
+arduino
+
+http://192.168.200.212:3000/api
+🧰 Mantenimiento rápido
+Actualizar proyecto desde GitHub:
+
+bash
+
+cd /home/deploy/drhched_api
+git pull
+docker compose up -d --build
+Reiniciar contenedores:
+
+bash
+
+docker compose restart
+Limpiar caché / reconstruir completamente:
+
+bash
+
+docker compose down -v
+docker compose up -d --build
+📚 Notas finales
+El usuario deploy se utiliza exclusivamente para despliegue y mantenimiento remoto.
+
+Las claves SSH permiten acceso sin contraseña.
+
+El token GitHub se recomienda rotarlo cada 3–6 meses.
+
+Usa sudo journalctl -u ssh si tienes problemas con conexión SSH.
+
+Recuerda exponer el puerto 3000 en tu red LAN para acceso desde Flutter Web.
+
+© 2025 — DRH-CHED Project
+Desarrollado con ❤️ sobre NestJS, Prisma y PostgreSQL
+
+
+
