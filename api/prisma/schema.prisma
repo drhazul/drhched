@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Company {
+  id        String   @id @default(cuid()) @map("id")
+  name      String   @map("name") @db.VarChar(150)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  branches  Branch[]
+  users     User[]
+
+  @@map("company")
+}
+
+model Branch {
+  id        String   @id @default(cuid()) @map("id")
+  name      String   @map("name") @db.VarChar(150)
+  companyId String   @map("company_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users     User[]
+
+  @@map("branch")
+}
+
+model User {
+  id        String   @id @default(cuid()) @map("id")
+  email     String   @unique @map("email") @db.VarChar(190)
+  password  String   @map("password") @db.VarChar(200)
+  role      UserRole @default(COLLAB) @map("role")
+  companyId String   @map("company_id")
+  branchId  String?  @map("branch_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("user")
+}
+
+enum UserRole {
+  ADMIN
+  OWNER
+  COLLAB
+}

@@ -1,0 +1,1 @@
+-- Baseline: esquema preexistente gestionado fuera de Prisma

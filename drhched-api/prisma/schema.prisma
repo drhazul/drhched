@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Company {
+  id        String   @id @default(cuid()) @map("id")
+  name      String   @db.VarChar(150)     @map("name")
+  createdAt DateTime @default(now())      @map("created_at")
+  updatedAt DateTime @updatedAt           @map("updated_at")
+
+  branches  Branch[]
+  users     User[]
+
+  @@map("company")
+}
+
+model Branch {
+  id        String   @id @default(cuid()) @map("id")
+  name      String   @db.VarChar(150)     @map("name")
+  companyId String   @map("company_id")
+  createdAt DateTime @default(now())      @map("created_at")
+  updatedAt DateTime @updatedAt           @map("updated_at")
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users     User[]   // lado opuesto de User.branch
+
+  @@map("branch")
+}
+
+enum UserRole {
+  ADMIN
+  OWNER
+  COLLAB
+}
+
+model User {
+  id        String   @id @default(cuid()) @map("id")
+  email     String   @unique              @db.VarChar(190) @map("email")
+  password  String   @db.VarChar(200)     @map("password")
+  role      UserRole @default(COLLAB)     @map("role")
+  companyId String   @map("company_id")
+  branchId  String?  @map("branch_id")
+  createdAt DateTime @default(now())      @map("created_at")
+  updatedAt DateTime @updatedAt           @map("updated_at")
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@map("user")
+}

@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: drhched_db
+    restart: unless-stopped
+    env_file:
+      - .env.prod               # Debe contener POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+    ports:
+      - "0.0.0.0:5432:5432"     # expón si quieres acceder desde tu LAN; si no, elimina esta línea
+    networks:
+      - backend
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h 127.0.0.1 -p 5432"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drhched_api
+    restart: unless-stopped
+    env_file:
+      - .env.prod               # Debe contener DATABASE_URL, NODE_ENV=production, etc.
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+    # Exponer la API solo por la IP LAN del host
+    ports:
+      - "192.168.200.212:3000:3000"
+    # Montamos el esquema/migraciones para que Prisma las vea dentro del contenedor
+    volumes:
+      - ./prisma:/app/prisma:ro
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres-data:
+
