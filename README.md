@@ -111,7 +111,7 @@ bash
 Ejemplo básico:
 
 env
-
+.
 DATABASE_URL="postgresql://postgres:postgres@postgres:5432/drhched_prod?schema=public"
 PORT=3000
 JWT_SECRET=supersecretkey
@@ -211,6 +211,14 @@ El token GitHub se recomienda rotarlo cada 3–6 meses.
 Usa sudo journalctl -u ssh si tienes problemas con conexión SSH.
 
 Recuerda exponer el puerto 3000 en tu red LAN para acceso desde Flutter Web.
+
+---
+### 📖 Documentación relacionada
+
+- 🧩 [Guía de desarrollo local (README.dev.md)](README.dev.md)
+- 🐳 [Infraestructura Docker (carpeta infra)](infra/)
+- 🧱 [Base de datos / Prisma (carpeta db)](db/)
+---
 
 © 2025 — DRH-CHED Project
 Desarrollado con ❤️ sobre NestJS, Prisma y PostgreSQL
