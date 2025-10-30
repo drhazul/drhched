@@ -20,7 +20,7 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y git curl wget unzip
 🐋 Instalar Docker y Docker Compose
 bash
-
+Copiar código
 sudo apt install -y ca-certificates curl gnupg lsb-release
 
 # Repositorio Docker oficial
@@ -37,42 +37,57 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 Verifica instalación:
 
 bash
-
+Copiar código
 docker --version
 docker compose version
 👤 Crear usuario deploy y configurar permisos SSH
 Crear usuario:
-
 bash
-
+Copiar código
 sudo adduser deploy
 Darle permisos para Docker:
-
 bash
-
+Copiar código
 sudo usermod -aG docker deploy
 Permitir acceso SSH:
-
 bash
-
+Copiar código
 sudo mkdir -p /home/deploy/.ssh
 sudo chmod 700 /home/deploy/.ssh
 sudo chown deploy:deploy /home/deploy/.ssh
-Desde tu PC local, copia tu clave pública:
+🔐 Acceso SSH desde tu PC
+💡 Nota:
+Si ya puedes conectarte con:
 
 bash
+Copiar código
+ssh deploy@192.168.200.212
+usando contraseña, no es obligatorio configurar claves públicas.
+Puedes mantener el acceso por contraseña si prefieres más control manual.
 
-ssh-copy-id deploy@192.168.200.212
-Verifica acceso:
+La copia de claves (ssh-copy-id) solo es necesaria si deseas acceso sin contraseña
+(por ejemplo, para automatizar despliegues o CI/CD).
 
-bash
+🪟 (Opcional) Si usas Windows y quieres habilitar acceso sin contraseña
+powershell
+Copiar código
+# Generar clave pública
+ssh-keygen -t ed25519
 
+# Copiarla al servidor (versión equivalente a ssh-copy-id)
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@192.168.200.212 "mkdir -p /home/deploy/.ssh && cat >> /home/deploy/.ssh/authorized_keys && chown -R deploy:deploy /home/deploy/.ssh && chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys"
+Probar:
+
+powershell
+Copiar código
 ssh deploy@192.168.200.212
 🔐 Configuración de GitHub (acceso al repositorio)
-1. Crear token personal en GitHub
-En tu cuenta →
-Settings > Developer Settings > Personal Access Tokens > Tokens (classic)
-Crear un token con permisos:
+1️⃣ Crear token personal en GitHub
+En tu cuenta:
+
+Settings → Developer Settings → Personal Access Tokens → Tokens (classic)
+
+Crea un token con permisos:
 
 repo
 
@@ -80,46 +95,76 @@ read:packages
 
 workflow
 
-2. Guardar el token en el servidor
-En el servidor, configura Git globalmente para usar el token:
-
+2️⃣ Configurar credenciales en el servidor
 bash
-
+Copiar código
 git config --global user.name "deploy"
 git config --global user.email "deploy@local"
 git config --global credential.helper store
-Luego clona usando el token:
+Luego clona el repositorio (con tu token):
 
 bash
-
+Copiar código
 git clone https://<TOKEN>@github.com/TU_USUARIO/TU_REPOSITORIO.git
-💡 Ejemplo:
+💡 Ejemplo real:
 
 bash
-
-git clone https://ghp_a1b2c3d4e5f6g7h8i9j0@github.com/ioe-labs/drhched_api.git
+Copiar código
+git clone https://<AQUIELTOKEN>@github.com/drhazul/drhched.git
 🧱 Estructura de proyecto en servidor
 bash
-
-/home/deploy/drhched_api/
+Copiar código
+/home/deploy/drhched/
 │
 ├── docker-compose.yml
 ├── .env
 └── prisma/
     └── schema.prisma
 ⚙️ Variables de entorno (.env de producción)
-Ejemplo básico:
+Ejemplo completo:
 
 env
-.
-DATABASE_URL="postgresql://postgres:postgres@postgres:5432/drhched_prod?schema=public"
+Copiar código
+# ===================================
+# 🌐 Configuración general
+# ===================================
+NODE_ENV=production
 PORT=3000
-JWT_SECRET=supersecretkey
+
+# ===================================
+# 🔑 Autenticación JWT
+# ===================================
+JWT_SECRET="supersecretkey_drhched_prod"
+JWT_EXPIRES_IN="7d"
+
+# ===================================
+# 🗄️ Base de datos (Docker)
+# ===================================
+DATABASE_URL="postgresql://postgres:postgres@postgres:5432/drhched_prod?schema=public"
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=drhched_prod
+
+# ===================================
+# 🧭 API Config
+# ===================================
+API_BASE_URL="http://192.168.200.212:3000/api"
+CORS_ORIGIN="*"
+
+# ===================================
+# ⚙️ Prisma Config
+# ===================================
+PRISMA_LOG_LEVEL=info
+Guarda este archivo en:
+
+swift
+Copiar código
+/home/deploy/drhched/.env
 🐳 Docker Compose — API + PostgreSQL
 Ejemplo de docker-compose.yml:
 
 yaml
-
+Copiar código
 version: "3.8"
 services:
   postgres:
@@ -146,7 +191,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/drhched_prod?schema=public
       - PORT=3000
-      - JWT_SECRET=supersecretkey
+      - JWT_SECRET=supersecretkey_drhched_prod
+      - NODE_ENV=production
     ports:
       - "3000:3000"
     networks:
@@ -159,69 +205,127 @@ networks:
 Desde la carpeta del proyecto:
 
 bash
-
+Copiar código
+cd /home/deploy/drhched
 docker compose up -d --build
 Una vez los contenedores estén arriba, ejecuta la migración:
 
 bash
-
+Copiar código
 docker exec -it drhched_api npx prisma migrate deploy
 Verifica logs:
 
 bash
-
+Copiar código
 docker compose logs -f
 🌐 Prueba desde la LAN
 Desde otra PC de la red:
 
 bash
-
+Copiar código
 curl http://192.168.200.212:3000/api
-O abre en navegador:
+O en navegador:
 
 arduino
-
+Copiar código
 http://192.168.200.212:3000/api
 🧰 Mantenimiento rápido
 Actualizar proyecto desde GitHub:
 
 bash
-
-cd /home/deploy/drhched_api
+Copiar código
+cd /home/deploy/drhched
 git pull
 docker compose up -d --build
 Reiniciar contenedores:
 
 bash
-
+Copiar código
 docker compose restart
 Limpiar caché / reconstruir completamente:
 
 bash
-
+Copiar código
 docker compose down -v
 docker compose up -d --build
+Ver logs:
+
+bash
+Copiar código
+docker compose logs -f
 📚 Notas finales
 El usuario deploy se utiliza exclusivamente para despliegue y mantenimiento remoto.
 
-Las claves SSH permiten acceso sin contraseña.
+Puedes mantener autenticación por contraseña si prefieres más seguridad manual.
 
 El token GitHub se recomienda rotarlo cada 3–6 meses.
 
 Usa sudo journalctl -u ssh si tienes problemas con conexión SSH.
 
-Recuerda exponer el puerto 3000 en tu red LAN para acceso desde Flutter Web.
+Asegúrate de exponer el puerto 3000 en tu red LAN para acceso desde Flutter Web.
 
----
-### 📖 Documentación relacionada
+📖 Documentación relacionada
+🧩 Guía de desarrollo local (README.dev.md)
 
-- 🧩 [Guía de desarrollo local (README.dev.md)](README.dev.md)
-- 🐳 [Infraestructura Docker (carpeta infra)](infra/)
-- 🧱 [Base de datos / Prisma (carpeta db)](db/)
----
+🐳 Infraestructura Docker (carpeta infra)
 
+🧱 Base de datos / Prisma (carpeta db)
+
+🔄 Flujo de trabajo — Desarrollo → Producción LAN
+text
+Copiar código
+┌────────────────────────────┐
+│        💻 DESARROLLO        │
+│────────────────────────────│
+│ Tu PC local (Ubuntu/Win)   │
+│                            │
+│ • Node.js + NestJS CLI     │
+│ • Prisma conectado a DB    │
+│ • Ejecución:               │
+│   npm run start:dev        │
+│                            │
+│ 👉 Haces commits y push a  │
+│    GitHub (rama main/dev)  │
+└──────────────┬─────────────┘
+               │  (git push)
+               ▼
+┌────────────────────────────┐
+│    🌐 REPOSITORIO GITHUB    │
+│────────────────────────────│
+│ Guarda código actualizado  │
+│ Permite clonación o pull   │
+│ vía token o SSH            │
+└──────────────┬─────────────┘
+               │  (git pull)
+               ▼
+┌────────────────────────────┐
+│      🖥️ PRODUCCIÓN LAN      │
+│────────────────────────────│
+│ Servidor Ubuntu (svrflutter) │
+│ Usuario: deploy            │
+│                            │
+│ • Docker + Compose         │
+│ • Servicios:               │
+│   - PostgreSQL (db)        │
+│   - NestJS API (api)       │
+│                            │
+│ • Ejecución:               │
+│   docker compose up -d     │
+│                            │
+│ API expuesta en LAN:       │
+│   http://192.168.200.212:3000/api
+└──────────────┬─────────────┘
+               │
+               ▼
+┌────────────────────────────┐
+│        📱 CLIENTES          │
+│────────────────────────────│
+│ Flutter Web / App Móvil    │
+│                            │
+│ Se conectan a la API vía   │
+│ LAN usando:                │
+│   API_BASE_URL=            │
+│   http://192.168.200.212:3000/api
+└────────────────────────────┘
 © 2025 — DRH-CHED Project
 Desarrollado con ❤️ sobre NestJS, Prisma y PostgreSQL
-
-
-
