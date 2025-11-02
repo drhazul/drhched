@@ -18,6 +18,17 @@ npx prisma generate 1>/dev/null
 echo "[entrypoint] Ejecutando 'prisma migrate deploy'..."
 npx prisma migrate deploy --schema=prisma/schema.prisma
 
+# --------------------------------------------------------
+# Seed inicial condicional (solo si no existe el admin)
+# --------------------------------------------------------
+if ! npx prisma db execute --command "SELECT 1 FROM \"user\" WHERE email='admin@demo.local';" --schema=prisma/schema.prisma | grep -q 1; then
+  echo "[entrypoint] Ejecutando seed inicial..."
+  node dist/prisma/seed.js || true
+else
+  echo "[entrypoint] Seed omitido (usuario admin@demo.local ya existe)"
+fi
+# --------------------------------------------------------
+
 # Seleccionar el main compilado
 APP_MAIN=""
 if [ -f "dist/main.js" ]; then
