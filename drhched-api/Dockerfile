@@ -25,11 +25,11 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Agregamos un DATABASE_URL dummy SOLO para el build
+# Agregamos un DATABASE_URL dummy SOLO para el build (para prisma generate)
 ARG DUMMY_DATABASE_URL="postgresql://user:pass@localhost:5432/placeholder?schema=public"
 ENV DATABASE_URL=${DUMMY_DATABASE_URL}
 
-# genera Prisma Client aquí (ya existe prisma.config.ts / prisma/schema.prisma)
+# Generar Prisma Client y compilar Nest
 RUN npx prisma generate
 RUN npm run build
 
@@ -38,19 +38,21 @@ RUN npm run build
 # ----------------------------------------
 FROM base AS runner
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
 WORKDIR /app
 
-# IMPORTANTÍSIMO: copiar con propietario correcto
+# Copiar artefactos con propietario correcto
 USER root
 COPY --from=builder --chown=appuser:appgroup /app/package.json ./package.json
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/prisma.config.ts ./prisma.config.ts
-COPY --chown=appuser:appgroup docker/entrypoint.sh docker/entrypoint.sh
 
-# Fallback por si acaso
-RUN chown -R appuser:appgroup /app
+# Copiar entrypoint y dar permisos
+COPY --chown=appuser:appgroup docker/entrypoint.sh ./docker/entrypoint.sh
+RUN chmod +x ./docker/entrypoint.sh \
+  && chown -R appuser:appgroup /app
 
 USER appuser
 EXPOSE 3000

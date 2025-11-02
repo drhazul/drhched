@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider          = "postgresql"
   url               = env("DATABASE_URL")
+  // En PRODUCCIÓN: comenta o elimina esta línea
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -30,6 +31,7 @@ model Branch {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   users     User[]   // lado opuesto de User.branch
 
+  @@index([companyId])
   @@map("branch")
 }
 
@@ -41,16 +43,18 @@ enum UserRole {
 
 model User {
   id        String   @id @default(cuid()) @map("id")
-  email     String   @unique              @db.VarChar(190) @map("email")
-  password  String   @db.VarChar(200)     @map("password")
-  role      UserRole @default(COLLAB)     @map("role")
+  email     String   @unique @db.VarChar(190) @map("email") // único global
+  password  String   @db.VarChar(200)        @map("password")
+  role      UserRole @default(COLLAB)        @map("role")
   companyId String   @map("company_id")
   branchId  String?  @map("branch_id")
-  createdAt DateTime @default(now())      @map("created_at")
-  updatedAt DateTime @updatedAt           @map("updated_at")
+  createdAt DateTime @default(now())         @map("created_at")
+  updatedAt DateTime @updatedAt              @map("updated_at")
 
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
+  @@index([companyId])
+  @@index([branchId])
   @@map("user")
 }

@@ -6,7 +6,7 @@ services:
     env_file:
       - .env.prod               # Debe contener POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
     ports:
-      - "0.0.0.0:5432:5432"     # expón si quieres acceder desde tu LAN; si no, elimina esta línea
+      - "0.0.0.0:5432:5432"     # Exponer DB a toda interfaz (LAN). Elimina esta línea si NO quieres exponerla.
     networks:
       - backend
     volumes:
@@ -30,16 +30,35 @@ services:
         condition: service_healthy
     networks:
       - backend
-    # Exponer la API solo por la IP LAN del host
     ports:
-      - "192.168.200.212:3000:3000"
-    # Montamos el esquema/migraciones para que Prisma las vea dentro del contenedor
+      - "0.0.0.0:3000:3000"     # Exponer API en toda interfaz (LAN)
     volumes:
-      - ./prisma:/app/prisma:ro
+      - ./prisma:/app/prisma:ro # Prisma schema/migrations visibles en runtime (solo lectura)
+    # (Opcional) Si usas entrypoint para migrar al arrancar:
+    # command: ["sh", "-c", "./docker/entrypoint.sh"]
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: drhched_pgadmin
+    restart: unless-stopped
+    env_file:
+      - .env.prod               # Debe contener PGADMIN_DEFAULT_EMAIL, PGADMIN_DEFAULT_PASSWORD
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "0.0.0.0:5050:80"       # Acceso web a pgAdmin (LAN)
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      # Auto-registro del servidor Postgres en pgAdmin (el archivo debe existir)
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+
 networks:
   backend:
     driver: bridge
 
 volumes:
   postgres-data:
-
+  pgadmin-data:
